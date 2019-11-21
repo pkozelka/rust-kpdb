@@ -480,6 +480,15 @@ impl Database {
         }
     }
 
+    /// Attempts to export the database content in XML format.
+    pub fn xml_export<W: Write>(&self, writer: &mut W) -> Result<()> {
+        let mut writer = LogWriter::new(writer);
+        match self.db_type {
+            DbType::Kdb1 => Err(Error::Unimplemented(String::from("KeePass v1 not supported"))),
+            DbType::Kdb2 => kdb2_writer::xml_export(&mut writer, self),
+        }
+    }
+
     fn open_kdb2<R: Log + Read>(reader: &mut R, key: &CompositeKey) -> Result<Database> {
         let (meta_data, xml_data) = kdb2_reader::read(reader, key)?;
         match xml_data.header_hash {

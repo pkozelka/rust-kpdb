@@ -82,6 +82,19 @@ pub fn write<W: Log + Write>(writer: &mut W, db: &Database) -> Result<()> {
 
     Ok(())
 }
+/// Attempts to export the database content in XML format.
+pub fn xml_export<W: Log + Write>(writer: &mut W, db: &Database) -> Result<()> {
+    let mut random = RandomGen::new()?;
+    let protected_stream_key = ProtectedStreamKey(random.next_32_bytes());
+    let stream_key = StreamKey::new(&protected_stream_key);
+    let hash = HeaderHash(sha256::hash(&[&writer.logged()]).to_vec());
+
+    let mut xml = Vec::new();
+    kdb2_xml_writer::write(&mut xml, db, &hash, &stream_key)?;
+    writer.write(&xml)?;
+
+    Ok(())
+}
 
 fn write_block<W: Write>(writer: &mut W, id: u32, data: &[u8]) -> Result<()> {
     writer.write_u32::<LittleEndian>(id)?;
